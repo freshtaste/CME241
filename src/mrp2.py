@@ -21,8 +21,8 @@ class MRP2(MP):
         prob = self.transition_matrix
         val = self.reward_mat
         reward_list = np.diag(prob.dot(val.T)).tolist()
-        return self.process, {s:reward_list[i] for i, s in enumerate(self.all_state_list)}, self.gamma
+        return {s:reward_list[i] for i, s in enumerate(self.all_state_list)}
     
     def valueFun(self) -> float:
-        obj = MRP(self.convert)
+        obj = MRP(self.process, self.convert(), self.gamma)
         return obj.valueFun()
