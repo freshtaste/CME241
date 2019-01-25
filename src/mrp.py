@@ -1,7 +1,7 @@
 import numpy as np
 from src.mp import MP
 from src.my_funcs import SSf, S
-from typing import Sequence
+from typing import Sequence, Set
 
 class MRP(MP):
     
@@ -12,17 +12,18 @@ class MRP(MP):
             raise ValueError
         else:
             self.gamma: float = gamma
-            self.terminal_states = self.get_sink_states()
+            self.terminal_states: Set[S] = self.get_sink_states()
             self.nt_states_list: Sequence[S] = self.get_nt_states_list()
             self.trans_matrix: np.ndarray = self.get_trans_matrix()
-            self.reward = np.array([state_reward[s] for s in self.nt_states_list])
+            self.reward: np.ndarray = np.array([state_reward[s] for s in self.nt_states_list])
+            self.state_reward: dict = state_reward
 
     # get non-terminal states
     def get_nt_states_list(self) -> Sequence[S]:
         return [s for s in self.all_state_list
                 if s not in self.terminal_states]
     
-    # get transition matrix without non-terminal states
+    # get transition matrix without terminal states
     def get_trans_matrix(self) -> np.ndarray:
         
         n = len(self.nt_states_list)
