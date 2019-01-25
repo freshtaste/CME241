@@ -35,7 +35,7 @@ class MRP(MP):
         return m
     
     # obtain value function of the MRP proecess
-    def valueFun(self) -> float:
+    def valueFun(self) -> np.ndarray:
         return np.linalg.inv(np.identity(len(self.nt_states_list)) - \
                 self.gamma*self.trans_matrix).dot(self.reward)
         
