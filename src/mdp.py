@@ -1,7 +1,7 @@
 import numpy as np
 from src.mrp import MRP
 from src.my_funcs import S, A, SASf, verify_mdp, get_all_states, SAf
-from typing import Mapping, Set, Sequence, List
+from typing import Mapping, Set, Sequence, List, Tuple
 
 
 class MDP(MRP):
@@ -70,7 +70,65 @@ class MDP(MRP):
     def policy_evaluation(self, pol: Mapping[S,Mapping[A, float]]) -> Mapping[S, float]:
         return {state: self.get_mrp(pol).valueFun()[i] \
                  for i, state in enumerate(self.nt_states_list)}
-                    
     
+    
+    def policy_iteration(self, init_pol: Mapping[S,Mapping[A, float]], max_iter: int = 200) \
+                     -> Tuple[Mapping[S,Mapping[A, float]], Mapping[S, float]]:
+        pol = None
+        pol_new = init_pol
+        n_iter = 0
+        while pol_new != pol and n_iter < max_iter:
+            pol = pol_new
+            val = self.policy_evaluation(pol) # Sf
+            for s in self.terminal_states: # add terminal states
+                val[s] = [s for s in self.state_reward[s].values()][0]
+            pol_new = {} # SAf
+            for s in self.nt_states_list:
+                R_sa = self.state_reward[s] # Af
+                prob = self.process[s] # ASf
+                val_a = {} # Af
+                for action in prob.keys():
+                    val_a[action] = self.gamma*sum([prob[action][state]*val[state] \
+                                        for state in prob[action].keys()])
+                q_sa = {a: R_sa[a] + val_a[a] for a in prob.keys()}       
+                pol_new[s] = { max(q_sa.items(), key=lambda l: l[1])[0]: 1}
+            # terminal state policy
+            for state in self.terminal_states:
+                pol_new[state] = init_pol[state]
+            n_iter += 1
         
- 
+        if pol_new == pol:
+            print("Number of iterations: {}.".format(n_iter))
+        else:
+            print("Not converging in {} iterations.".format(n_iter))
+        
+        return pol, val
+    
+                
+    def value_iteration(self, eps: float = 1e-8, max_iter: int = 200) \
+                     -> Tuple[Mapping[S,Mapping[A, float]], Mapping[S, float]]:
+        val = {s: 0 for s in self.all_state_list}
+        val_new = {}
+        diff = 1000
+        n_iter = 0
+        pol = {}
+        while diff > eps and n_iter < max_iter:
+            for s in self.all_state_list:
+                q_sa = {}
+                for a in self.process[s].keys():
+                    prob = self.process[s][a]
+                    q_sa[a] = self.state_reward[s][a] + self.gamma*\
+                        sum([prob[state]*val[state] for state in prob.keys()])
+                find_max = max(q_sa.items(), key=lambda l: l[1])
+                val_new[s] = find_max[1]
+                pol[s] = { find_max[0]: 1}
+            diff = max([np.abs(val_new[s] - val[s]) for s in self.all_state_list])
+            val = val_new.copy()
+            n_iter += 1
+        
+        if diff <= eps:
+            print("Number of iterations: {}.".format(n_iter))
+        else:
+            print("Not converging in {} iterations.".format(n_iter))
+            
+        return pol, val
