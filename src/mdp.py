@@ -1,6 +1,6 @@
 import numpy as np
 from src.mrp import MRP
-from src.my_funcs import S, A, SASf, verify_mdp, get_all_states, SAf
+from src.my_funcs import S, A, SASf, verify_mdp, get_all_states, SAf 
 from typing import Mapping, Set, Sequence, List, Tuple
 
 
@@ -132,3 +132,4 @@ class MDP(MRP):
             print("Not converging in {} iterations.".format(n_iter))
             
         return pol, val
+        

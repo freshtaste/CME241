@@ -1,5 +1,6 @@
-from typing import TypeVar, Mapping, List, Any
+from typing import TypeVar, Mapping, List, Any, Callable, Tuple, Set
 import numpy as np
+from scipy.stats import rv_discrete
 
 # define generic type S and MP type
 S = TypeVar('S')
@@ -7,6 +8,7 @@ A = TypeVar('A')
 SSf = Mapping[S, Mapping[S, float]]
 SAf = Mapping[S, Mapping[A, float]]
 SASf = Mapping[S, Mapping[A, Mapping[S, float]]]
+SASTff = Mapping[S, Mapping[A, Mapping[S, Tuple[float, float]]]]
 
 def get_all_states(d: Mapping[S, Any]) -> List[S]:
     return list(d.keys())
@@ -33,3 +35,42 @@ def verify_mdp(tr: SASf) -> bool:
         if np.abs(each_row - 1) > 1e-8:
             return False
     return True
+
+def get_actions_for_states(mdp_data: Mapping[S, Mapping[A, Any]])\
+        -> Mapping[S, Set[A]]:
+    return {k: set(v.keys()) for k, v in mdp_data.items()}
+
+def get_rv_gen_func_single(prob_dict: Mapping[S, float])\
+        -> Callable[[], S]:
+    outcomes, probabilities = zip(*prob_dict.items())
+    rvd = rv_discrete(values=(range(len(outcomes)), probabilities))
+    
+    return lambda rvd=rvd, outcomes=outcomes: outcomes[rvd.rvs(size=1)[0]]
+
+def get_state_reward_gen_func(
+    prob_dict: Mapping[S, float],
+    rew_dict: Mapping[S, float]
+) -> Callable[[], Tuple[S, float]]:
+    gf = get_rv_gen_func_single(prob_dict)
+    
+    def ret_func(gf=gf, rew_dict=rew_dict) -> Tuple[S, float]:
+        state_outcome = gf()
+        reward_outcome = rew_dict[state_outcome]
+        return state_outcome, reward_outcome
+
+    return ret_func
+
+def get_state_reward_gen_dict(tr: SASf, rr: SASf) \
+        -> Mapping[S, Mapping[A, Callable[[], Tuple[S, float]]]]:
+    return {s: {a: get_state_reward_gen_func(tr[s][a], rr[s][a])
+                for a, _ in v.items()}
+            for s, v in rr.items()}
+
+def mdp_refined_split_info(info: SASTff) -> Tuple[SASf, SASf, SAf]:
+    tr = {s: {a: {s1: v2[0] for s1,v2 in v1.items()} for a,v1 in v.items()} 
+                for s,v in info.items()}
+    rr = {s: {a: {s1: v2[1] for s1,v2 in v1.items()} for a,v1 in v.items()} 
+                for s,v in info.items()}
+    state_reward = {s: {a: sum([v2[0]*v2[1] for s1,v2 in v1.items()]) for a,v1 in v.items()} 
+                for s,v in info.items()}
+    return tr, rr, state_reward
