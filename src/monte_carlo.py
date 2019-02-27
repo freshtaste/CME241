@@ -1,6 +1,6 @@
 from typing import Optional, Tuple, Sequence, Callable, Mapping
-from mdp_for_rl_tabular import MDPRLTabular
-from src.my_funcs import S, SAf, get_rv_gen_func_single
+from src.mdp_for_rl_tabular import MDPRLTabular
+from src.my_funcs import A, S, SAf, get_rv_gen_func_single
 import numpy as np
 
 class MonteCarlo():
@@ -15,10 +15,11 @@ class MonteCarlo():
     ) -> None:
         self.mdp_rep: MDPRLTabular = mdp_rep_for_rl
         self.exploring_start: bool = exploring_start
+        self.first_visit = first_visit
         self.num_episodes: int = num_episodes
         self.max_steps: int = max_steps
         
-    def get_mc_path(self, pol: SAf, start_state: S):
+    def get_mc_path(self, pol: SAf, start_state: S) -> Sequence[Tuple[S, A, float, bool]]:
         path = []
         state = start_state
         steps = 0
@@ -30,24 +31,26 @@ class MonteCarlo():
                         and steps <= self.max_steps:
             first_time = state not in occ_states
             occ_states.append(state)
-            action = action_dic[state]
+            action = action_dic[state]()
             next_state, reward = \
                        self.mdp_rep.state_reward_gen_dict[state][action]()
             path.append((state, action, reward, first_time))
             steps += 1
             state = next_state
+        
+        path.append((state, 'End',0,'End'))
             
         return path
     
     def get_value_func_dict(self, pol: SAf) -> Mapping[S, float]:
-        counts_dict = {s: 0 for s in self.mdp_rep.state_action_dict.keys().keys()}
-        vf_dict = {s: 0.0 for s in self.mdp_rep.state_action_dict.keys().keys()}
+        counts_dict = {s: 0 for s in self.mdp_rep.state_action_dict.keys()}
+        vf_dict = {s: 0.0 for s in self.mdp_rep.state_action_dict.keys()}
         episodes = 0
         
         while episodes < self.num_episodes:
             start_state = self.mdp_rep.init_state_gen()
             mc_path = self.get_mc_path(pol, start_state)
-            rew_arr = np.array([x for _, _, x, _ in mc_path])
+            rew_arr = np.array([x for _, _, x, _ in mc_path[:-1]])
             if mc_path[-1][0] in self.mdp_rep.terminal_states:
                 returns = self.get_returns(rew_arr)
             else:
