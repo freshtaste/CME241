@@ -9,7 +9,6 @@ class TDLambda():
     def __init__(
         self,
         mdp_rep_for_rl: MDPRLTabular,
-        exploring_start: bool,
         epsilon: float,
         epsilon_half_life: float,
         learning_rate: float,
@@ -19,7 +18,6 @@ class TDLambda():
         max_steps: int
     ) -> None:
         self.mdp_rep: MDPRLTabular = mdp_rep_for_rl
-        self.exploring_start: bool = exploring_start
         self.epsilon: float = epsilon
         self.epsilon_half_life: float = epsilon_half_life
         self.learning_rate: float = learning_rate
@@ -34,7 +32,7 @@ class TDLambda():
         sa_dict = self.mdp_rep.state_action_dict
         vf_dict = {s: 0. for s in sa_dict.keys()}
         episodes = 0
-        monte = MonteCarlo(self.mdp_rep, self.exploring_start, True, \
+        monte = MonteCarlo(self.mdp_rep, True, \
                            self.num_episodes, self.max_steps)
         
         while episodes < self.num_episodes:

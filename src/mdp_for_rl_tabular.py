@@ -14,6 +14,12 @@ class MDPRLTabular(Generic[S, A]):
         self.state_reward_gen_dict: Type1 = state_reward_gen_dict
         self.gamma = gamma
         
-    def init_state_gen(self):
+    def init_state_gen(self) -> S:
         return [s for s in self.state_action_dict.keys()]\
                [random.randint(0,len(self.state_action_dict.keys())-1)]
+               
+    def init_state_action_gen(self) -> Tuple[S, A]:
+        state = self.init_state_gen()
+        action = [a for a in self.state_action_dict[state]]\
+                 [random.randint(0,len(self.state_action_dict[state])-1)]
+        return state, action

@@ -7,7 +7,6 @@ class TD0():
     def __init__(
             self,
             mdp_rep_for_rl: MDPRLTabular,
-            exploring_start: bool,
             epsilon: float,
             epsilon_half_life: float,
             learning_rate: float,
@@ -16,7 +15,6 @@ class TD0():
             max_steps: int
     ) -> None:
         self.mdp_rep: MDPRLTabular = mdp_rep_for_rl
-        self.exploring_start: bool = exploring_start
         self.epsilon: float = epsilon
         self.epsilon_half_life: float = epsilon_half_life
         self.learning_rate: float = learning_rate
