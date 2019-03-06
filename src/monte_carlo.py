@@ -8,13 +8,11 @@ class MonteCarlo():
     def __init__(
         self,
         mdp_rep_for_rl: MDPRLTabular,
-        exploring_start: bool,
         first_visit: bool,
         num_episodes: int,
         max_steps: int
     ) -> None:
         self.mdp_rep: MDPRLTabular = mdp_rep_for_rl
-        self.exploring_start: bool = exploring_start
         self.first_visit = first_visit
         self.num_episodes: int = num_episodes
         self.max_steps: int = max_steps

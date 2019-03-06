@@ -40,7 +40,7 @@ def get_actions_for_states(mdp_data: Mapping[S, Mapping[A, Any]])\
         -> Mapping[S, Set[A]]:
     return {k: set(v.keys()) for k, v in mdp_data.items()}
 
-def get_rv_gen_func_single(prob_dict: Mapping[S, float])\
+def get_rv_gen_func_single(prob_dict: Mapping[Any, float])\
         -> Callable[[], S]:
     outcomes, probabilities = zip(*prob_dict.items())
     rvd = rv_discrete(values=(range(len(outcomes)), probabilities))
@@ -74,3 +74,18 @@ def mdp_refined_split_info(info: SASTff) -> Tuple[SASf, SASf, SAf]:
     state_reward = {s: {a: sum([v2[0]*v2[1] for s1,v2 in v1.items()]) for a,v1 in v.items()} 
                 for s,v in info.items()}
     return tr, rr, state_reward
+
+def get_expected_action_value(action_qv: Mapping[A, float], epsilon: float) -> float:
+    _, val_opt = max(action_qv.items(), key = lambda l:l[1])
+    m = len(action_qv.keys())
+    return sum([val*epsilon/m for val in action_qv.values()]) \
+               + val_opt * (1 - epsilon)
+               
+def get_epsilon_greedy_action(action_qv: Mapping[A, float], epsilon: float) -> float:
+    action_opt, val_opt = max(action_qv.items(), key = lambda l:l[1])
+    m = len(action_qv.keys())
+    prob_dict = {a: epsilon/m + 1 - epsilon if a == action_opt else epsilon/m\
+                 for a,v in action_qv.items()}
+    gf = get_rv_gen_func_single(prob_dict)
+    
+    return gf()
